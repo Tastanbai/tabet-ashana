@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Данные из Ashandb</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin: 0;
+        }
+
+        .back-button {
+            margin-right: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+    <script>
+        function filterTable() {
+            const schoolName = document.getElementById("school_name").value.toLowerCase();
+            const startDate = new Date(document.getElementById("start_date").value);
+            const endDate = new Date(document.getElementById("end_date").value);
+            const table = document.getElementById("ashanaTable");
+            const rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const schoolCell = row.getElementsByTagName("td")[0];
+                const dateCell = row.getElementsByTagName("td")[3];
+
+                if (schoolCell && dateCell) {
+                    const schoolText = schoolCell.textContent.toLowerCase();
+                    const rowDate = new Date(dateCell.textContent);
+
+                    const isSchoolMatch = schoolText.includes(schoolName);
+                    const isDateMatch = (!isNaN(startDate) && !isNaN(endDate)) ? 
+                        (rowDate >= startDate && rowDate <= endDate) : true;
+
+                    row.style.display = isSchoolMatch && isDateMatch ? "" : "none";
+                }
+            }
+        }
+
+        function exportToExcel() {
+    const table = document.getElementById("ashanaTable"); // Исправлено на правильный ID
+    const rows = Array.from(table.querySelectorAll("tr"));
+    const csvContent = rows.map(row => 
+        Array.from(row.querySelectorAll("th, td"))
+            .map(cell => `"${cell.textContent.trim()}"`) // Оборачивание текста в кавычки для корректности CSV
+            .join(",")
+    ).join("\n");
+
+    // Добавление BOM для поддержки кириллицы
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "ashandb_data.csv"; // Указано корректное имя файла
+    link.click();
+}
+
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</head>
+<body>
+    <div class="header-container">
+        <button class="back-button" onclick="goBack()">Назад</button>
+        <h1>Данные всех школ</h1>
+    </div>
+
+    <label for="school_name">Название школы:</label>
+    <input type="text" id="school_name" onkeyup="filterTable()" placeholder="Search for school...">
+
+    <label for="start_date">От:</label>
+    <input type="date" id="start_date" onchange="filterTable()">
+
+    <label for="end_date">До:</label>
+    <input type="date" id="end_date" onchange="filterTable()">
+
+    <button onclick="exportToExcel()">Export to Excel</button>
+
+    <table id="ashanaTable">
+        <thead>
+            <tr>
+                <th>Школа</th>
+                <th>ID</th>
+                <th>Card</th>
+                <th>Data</th>
+                <th>S Number</th>
+                <th>HIK</th>
+                <th>A1</th>
+                <th>Navigate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.school }}</td>
+                <td>{{ row.id }}</td>
+                <td>{{ row.card }}</td>
+                <td>{{ row.data }}</td>
+                <td>{{ row.s_number }}</td>
+                <td>{{ row.hik }}</td>
+                <td>{{ row.a1 }}</td>
+                <td>{{ row.navigate }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация tabet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .register-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .register-form h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .register-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .register-form input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .register-form button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .register-form button:hover {
+            background-color: #0056b3;
+        }
+        .error-message, .success-message {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .error-message {
+            color: red;
+        }
+        .success-message {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <form class="register-form" action="/register/" method="POST">
+        {% csrf_token %}
+        <h1>Регистрация</h1>
+        <label for="name">Имя</label>
+        <input type="text" id="name" name="name" placeholder="Введите ваше имя" required>
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Введите ваш email" required>
+        
+        <label for="password">Пароль</label>
+        <input type="password" id="password" name="password" placeholder="Введите ваш пароль" required>
+        
+        <button type="submit">Зарегистрироваться</button>
+        
+        {% if message %}
+            {% if success %}
+                <p class="success-message">{{ message }}</p>
+            {% else %}
+                <p class="error-message">{{ message }}</p>
+            {% endif %}
+        {% endif %}
+    </form>
+    
+</body>
+</html>

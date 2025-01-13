@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KitapDB</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin: 0;
+        }
+
+        .back-button {
+            margin-right: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+        }
+
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        input[type="text"], input[type="date"] {
+            padding: 8px;
+            margin: 10px 0;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        function filterTable() {
+            const schoolName = document.getElementById("school_name").value.toLowerCase();
+            const startDateInput = document.getElementById("start_date").value;
+            const endDateInput = document.getElementById("end_date").value;
+            const startDate = startDateInput ? parseDate(startDateInput.split('-').reverse().join('.')) : null;
+            const endDate = endDateInput ? parseDate(endDateInput.split('-').reverse().join('.')) : null;
+            const table = document.getElementById("kitapTable");
+            const rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const schoolCell = row.getElementsByTagName("td")[0];
+                const dateOutCell = row.getElementsByTagName("td")[3];
+                const dateInCell = row.getElementsByTagName("td")[4];
+
+                if (schoolCell && dateOutCell && dateInCell) {
+                    const schoolText = schoolCell.textContent.toLowerCase();
+                    const dateOut = parseDate(dateOutCell.textContent);
+                    const dateIn = parseDate(dateInCell.textContent);
+
+                    const isSchoolMatch = schoolText.includes(schoolName);
+                    const isDateMatch = (!startDate || (dateOut && startDate <= dateOut)) &&
+                                        (!endDate || (dateIn && dateIn <= endDate));
+
+                    row.style.display = isSchoolMatch && isDateMatch ? "" : "none";
+                }
+            }
+        }
+
+        function parseDate(dateString) {
+            const parts = dateString.split('.');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]); // DD.MM.YYYY
+            }
+            return null;
+        }
+
+        function exportToExcel() {
+    const table = document.getElementById("kitapTable"); // Исправлено ID
+    const rows = Array.from(table.querySelectorAll("tr"));
+    const csvContent = rows.map(row => 
+        Array.from(row.querySelectorAll("th, td"))
+            .map(cell => `"${cell.textContent.trim()}"`) // Оборачивание текста в кавычки для корректности CSV
+            .join(",")
+    ).join("\n");
+
+    // Добавление BOM для корректного отображения кириллицы в Excel
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "kitapdb_data.csv"; // Исправлено имя файла
+    link.click();
+}
+
+
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</head>
+<body>
+    <div class="header-container">
+        <button class="back-button" onclick="goBack()">Назад</button>
+        <h1>Данные из Kitapdb</h1>
+    </div>
+
+    <label for="school_name">Название школы:</label>
+    <input type="text" id="school_name" onkeyup="filterTable()" placeholder="Поиск по школе...">
+
+    <label for="start_date">От:</label>
+    <input type="date" id="start_date" onchange="filterTable()">
+
+    <label for="end_date">До:</label>
+    <input type="date" id="end_date" onchange="filterTable()">
+
+    <button onclick="exportToExcel()">Экспортировать в Excel</button>
+
+    <table id="kitapTable">
+        <tr>
+            <th>Название школы</th>
+            <th>Имя ученика</th>
+            <th>Название книги</th>
+            <th>Дата выдачи</th>
+            <th>Планируемая дата возврата</th>
+            <th>ИИН</th>
+            <th>Номер телефона</th>
+            <th>Возвращена</th>
+        </tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row.0 }}</td>
+            <td>{{ row.1|default:"-" }}</td>
+            <td>{{ row.2|default:"-" }}</td>
+            <td>{{ row.3|date:"d.m.Y"|default:"-" }}</td>
+            <td>{{ row.4|date:"d.m.Y"|default:"-" }}</td>
+            <td>{{ row.5|default:"-" }}</td>
+            <td>{{ row.6|default:"-" }}</td>
+            <td>{{ row.7 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

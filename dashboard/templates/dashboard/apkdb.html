@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apk db</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin: 0;
+        }
+
+        .back-button {
+            margin-right: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+    <script>
+        function filterTable() {
+            const hikValue = document.getElementById("hik").value.toLowerCase();
+            const startDate = document.getElementById("start_date").value;
+            const endDate = document.getElementById("end_date").value;
+            const table = document.getElementById("apkTable");
+            const rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) { // Пропускаем заголовок
+                const row = rows[i];
+                const hikCell = row.getElementsByTagName("td")[4]; // Колонка с HIK
+                const dateCell = row.getElementsByTagName("td")[2]; // Колонка с датой
+
+                if (hikCell && dateCell) {
+                    const hikText = hikCell.textContent || hikCell.innerText;
+                    const rowDate = new Date(dateCell.textContent || dateCell.innerText);
+
+                    const isHikMatch = hikText.toLowerCase().includes(hikValue);
+                    const isDateMatch = (!startDate || new Date(startDate) <= rowDate) && (!endDate || rowDate <= new Date(endDate));
+
+                    row.style.display = isHikMatch && isDateMatch ? "" : "none";
+                }
+            }
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById("apkTable");
+            const rows = Array.from(table.querySelectorAll("tr"));
+            const csvContent = rows.map(row => 
+                Array.from(row.querySelectorAll("th, td"))
+                    .map(cell => cell.textContent.trim())
+                    .join(",")
+            ).join("\n");
+
+            // Добавление BOM для корректного отображения кириллицы в Excel
+            const bom = "\uFEFF";
+            const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "apkdb_data.csv";
+            link.click();
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</head>
+<body>
+    <div class="header-container">
+        <button class="back-button" onclick="goBack()">Назад</button>
+        <h1>Данные из Apkdb</h1>
+    </div>
+
+    <label for="hik">HIK:</label>
+    <input type="text" id="hik" onkeyup="filterTable()" placeholder="Search for HIK...">
+
+    <label for="start_date">От:</label>
+    <input type="date" id="start_date" onchange="filterTable()">
+
+    <label for="end_date">До:</label>
+    <input type="date" id="end_date" onchange="filterTable()">
+
+    <button onclick="exportToExcel()">Export to Excel</button>
+
+    <table id="apkTable">
+        <tr>
+            <th>ID</th>
+            <th>Card</th>
+            <th>Data</th>
+            <th>S Number</th>
+            <th>HIK</th>
+            <th>A1</th>
+            <th>A2</th>
+            <th>A3</th>
+            <th>A4</th>
+            <th>Navigate</th>
+        </tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row.0 }}</td>
+            <td>{{ row.1 }}</td>
+            <td>{{ row.2 }}</td>
+            <td>{{ row.3 }}</td>
+            <td>{{ row.4 }}</td>
+            <td>{{ row.5 }}</td>
+            <td>{{ row.6 }}</td>
+            <td>{{ row.7 }}</td>
+            <td>{{ row.8 }}</td>
+            <td>{{ row.9 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
