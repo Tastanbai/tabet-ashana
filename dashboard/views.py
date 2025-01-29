@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.db import connections
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def index(request): 
     return render (request, 'dashboard/index.html')
-
+@login_required
 def kitapdb_view(request):
     with connections['db2'].cursor() as cursor:
         cursor.execute("""
@@ -54,7 +55,7 @@ def kitapdb_view(request):
 
 from django.shortcuts import render
 from django.db import connections
-
+@login_required
 def apkdb(request):
     with connections['default'].cursor() as cursor:  
         cursor.execute("""
@@ -69,48 +70,53 @@ def apkdb(request):
 
 from django.shortcuts import render
 from django.db import connections
-
+@login_required
 def ashanadb(request):
     data = []
     error_messages = []
 
-    with connections['db1'].cursor() as cursor:  
-        cursor.execute("SELECT name FROM users")
-        school_names = [row[0] for row in cursor.fetchall()]
+    try:
+        with connections['db1'].cursor() as cursor:
+            # Извлекаем данные из таблицы ashana
+            cursor.execute("""
+                SELECT 
+                    a.id, 
+                    a.card, 
+                    a.data, 
+                    a.s_number, 
+                    a.hik, 
+                    a.a1, 
+                    a.navigate,
+                    u.name AS school_name
+                FROM ashana a
+                LEFT JOIN users u ON a.hik = u.name
+            """)
+            rows = cursor.fetchall()
+            
+            # Формируем данные
+            for row in rows:
+                data.append({
+                    'id': row[0],
+                    'card': row[1],
+                    'data': row[2],
+                    's_number': row[3],
+                    'hik': row[4],
+                    'a1': row[5],
+                    'navigate': row[6],
+                    'school_name': row[7],  # Имя школы
+                })
 
-        for school_name in school_names:
-            try:
-                cursor.execute(f"SHOW TABLES LIKE %s", [school_name])
-                if cursor.fetchone():
-                    cursor.execute(f"""
-                        SELECT id, card, data, s_number, hik, a1, navigate
-                        FROM `{school_name}`
-                    """)
-                    rows = cursor.fetchall()
-                    for row in rows:
-                        data.append({
-                            'school': school_name,
-                            'id': row[0],
-                            'card': row[1],
-                            'data': row[2],
-                            's_number': row[3],
-                            'hik': row[4],
-                            'a1': row[5],
-                            'navigate': row[6],
-                        })
-                else:
-                    error_messages.append(f"Таблица '{school_name}' не существует.")
-            except Exception as e:
-                error_messages.append(f"Ошибка при доступе к таблице '{school_name}': {str(e)}")
+    except Exception as e:
+        # Добавляем сообщение об ошибке
+        error_messages.append(f"Ошибка при доступе к таблице ashana: {str(e)}")
 
     return render(request, 'dashboard/ashanadb.html', {'data': data, 'error_messages': error_messages})
-
 
 
 from django.shortcuts import render
 from django.http import JsonResponse
 from .utils import register_user_in_api  # Убедитесь, что это функция отправки запросов к вашему API
-
+@login_required
 def register_page(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -139,3 +145,22 @@ def register_page(request):
 
     return render(request, 'dashboard/register.html')
 
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+@login_required
+def user_login(request):
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect("dashboard")  # Перенаправляем на дашборд
+        else:
+            messages.error(request, "Неверный логин или пароль")
+    
+    return render(request, "dashboard/login.html")

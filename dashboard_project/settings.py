@@ -9,6 +9,11 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Загружаем переменные из .env
 
 from pathlib import Path
 
@@ -19,13 +24,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l-m7-_%dbh0wn-p$ca7my6maaj%f$o-ix&j2zq=z(=1x6t2oj8'
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY не установлен. Добавьте его в .env")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['77.246.247.68']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 
 # Application definition
@@ -50,6 +59,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', 
+]
+
+
 ROOT_URLCONF = 'dashboard_project.urls'
 
 TEMPLATES = [
@@ -70,44 +84,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dashboard_project.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'apkdb',
-        'USER': 'apkdb',
-        'PASSWORD': '123qweASD?',
-        'HOST': '77.246.247.71',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_DEFAULT_NAME'),
+        'USER': os.getenv('DB_DEFAULT_USER'),
+        'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD'),
+        'HOST': os.getenv('DB_DEFAULT_HOST'),
+        'PORT': os.getenv('DB_DEFAULT_PORT'),
     },
-     'db1': {
-        'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'ashanadb',
-        'USER': 'ashanadb',
-        'PASSWORD': '123qweASD?',
-        'HOST': '77.246.247.68',
-        'PORT': '3306',
+    'db1': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_DB1_NAME'),
+        'USER': os.getenv('DB_DB1_USER'),
+        'PASSWORD': os.getenv('DB_DB1_PASSWORD'),
+        'HOST': os.getenv('DB_DB1_HOST'),
+        'PORT': os.getenv('DB_DB1_PORT'),
     },
     'db2': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'kitapdb',
-        'USER': 'kitapdb',
-        'PASSWORD': '123qweASD?',
-        'HOST': '77.246.247.59',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_DB2_NAME'),
+        'USER': os.getenv('DB_DB2_USER'),
+        'PASSWORD': os.getenv('DB_DB2_PASSWORD'),
+        'HOST': os.getenv('DB_DB2_HOST'),
+        'PORT': os.getenv('DB_DB2_PORT'),
     },
 }
 
+DATABASE_ROUTERS = ['dashboard_project.db_router.AuthRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -139,6 +143,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+LOGIN_URL = "/login/"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -149,3 +154,42 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 'yes') and not DEBUG
+SECURE_HSTS_SECONDS = 31536000  # 1 год
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+SESSION_COOKIE_SECURE = True  # Только HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Защита от XSS
+SESSION_COOKIE_SAMESITE = 'Lax'  # Защита от CSRF
+
+CSRF_COOKIE_SECURE = True  # Только HTTPS
+CSRF_COOKIE_HTTPONLY = True  # Запрет на JS-доступ
+CSRF_COOKIE_SAMESITE = 'Lax'  # Дополнительная защита CSRF
+X_FRAME_OPTIONS = 'DENY'  # Запрет на встраивание в iframe
+
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)  # Создаст папку, если её нет
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs/django_errors.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}

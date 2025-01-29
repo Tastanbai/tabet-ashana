@@ -66,43 +66,81 @@
         tr:hover {
             background-color: #ddd;
         }
+
+
+        #pagination {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        #pagination button {
+            margin: 0 10px;
+            padding: 5px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #pagination span {
+            font-weight: bold;
+        }
     </style>
     <script>
-        function filterTable() {
-            const schoolName = document.getElementById("school_name").value.toLowerCase();
-            const startDate = new Date(document.getElementById("start_date").value);
-            const endDate = new Date(document.getElementById("end_date").value);
-            const table = document.getElementById("ashanaTable");
-            const rows = table.getElementsByTagName("tr");
+       function filterTable() {
+        const hikValue = document.getElementById("hik").value.toLowerCase();
+        const startDate = new Date(document.getElementById("start_date").value);
+        const endDate = new Date(document.getElementById("end_date").value);
+        
+        // Добавляем 1 день к endDate, чтобы включить последний день
+        if (!isNaN(endDate.getTime())) {
+            endDate.setHours(23, 59, 59, 999);
+        }
 
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                const schoolCell = row.getElementsByTagName("td")[0];
-                const dateCell = row.getElementsByTagName("td")[3];
+        const table = document.getElementById("ashanaTable");
+        const rows = table.getElementsByTagName("tr");
 
-                if (schoolCell && dateCell) {
-                    const schoolText = schoolCell.textContent.toLowerCase();
-                    const rowDate = new Date(dateCell.textContent);
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const hikCell = row.getElementsByTagName("td")[5]; // Индекс 5 соответствует колонке HIK
+            const dateCell = row.getElementsByTagName("td")[3]; // Индекс 3 соответствует колонке Data
 
-                    const isSchoolMatch = schoolText.includes(schoolName);
-                    const isDateMatch = (!isNaN(startDate) && !isNaN(endDate)) ? 
-                        (rowDate >= startDate && rowDate <= endDate) : true;
+            if (hikCell && dateCell) {
+                const hikText = hikCell.textContent.toLowerCase();
+                const rowDate = new Date(dateCell.textContent);
 
-                    row.style.display = isSchoolMatch && isDateMatch ? "" : "none";
-                }
+                const isHikMatch = hikText.includes(hikValue);
+                const isDateMatch = (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) ? 
+                    (rowDate >= startDate && rowDate <= endDate) : true;
+
+                row.style.display = isHikMatch && isDateMatch ? "" : "none";
             }
         }
+    }
+
 
         function exportToExcel() {
     const table = document.getElementById("ashanaTable"); // Исправлено на правильный ID
+
+
+
+    
     const rows = Array.from(table.querySelectorAll("tr"));
     const csvContent = rows.map(row => 
         Array.from(row.querySelectorAll("th, td"))
             .map(cell => `"${cell.textContent.trim()}"`) // Оборачивание текста в кавычки для корректности CSV
-            .join(",")
+            .join(";")
     ).join("\n");
 
     // Добавление BOM для поддержки кириллицы
+    
     const bom = "\uFEFF";
     const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -115,6 +153,74 @@
         function goBack() {
             window.history.back();
         }
+          
+        const rowsPerPage = 100; // Количество строк на странице
+        let currentPage = 1; // Текущая страница
+
+        function paginateTable() {
+            const table = document.getElementById("ashanaTable");
+            const rows = Array.from(table.querySelectorAll("tbody tr"));
+            const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+            rows.forEach((row, index) => {
+                row.style.display = (index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage) ? "" : "none";
+            });
+
+            updatePaginationControls(totalPages);
+        }
+
+        function updatePaginationControls(totalPages) {
+            const paginationContainer = document.getElementById("pagination");
+            paginationContainer.innerHTML = ""; // Очистка старых контролов
+
+            if (totalPages === 0) {
+                paginationContainer.textContent = "Нет данных для отображения";
+                return;
+            }
+
+            // Кнопка "Назад"
+            const prevButton = document.createElement("button");
+            prevButton.textContent = "Назад";
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    paginateTable();
+                }
+            };
+            paginationContainer.appendChild(prevButton);
+
+            // Текущая страница
+            const pageInfo = document.createElement("span");
+            pageInfo.textContent = ` Страница ${currentPage} из ${totalPages} `;
+            paginationContainer.appendChild(pageInfo);
+
+            // Кнопка "Вперед"
+            const nextButton = document.createElement("button");
+            nextButton.textContent = "Вперед";
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    paginateTable();
+                }
+            };
+            paginationContainer.appendChild(nextButton);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const table = document.querySelector("table");
+            if (!table) return;
+
+            // Добавляем контейнер для пагинации
+            const paginationContainer = document.createElement("div");
+            paginationContainer.id = "pagination";
+            table.parentNode.appendChild(paginationContainer);
+
+            paginateTable(); // Инициализация пагинации
+        });
+
+
     </script>
 </head>
 <body>
@@ -123,8 +229,8 @@
         <h1>Данные всех школ</h1>
     </div>
 
-    <label for="school_name">Название школы:</label>
-    <input type="text" id="school_name" onkeyup="filterTable()" placeholder="Search for school...">
+    <label for="hik">Название школы:</label>
+    <input type="text" id="hik" onkeyup="filterTable()" placeholder="Search for school...">
 
     <label for="start_date">От:</label>
     <input type="date" id="start_date" onchange="filterTable()">

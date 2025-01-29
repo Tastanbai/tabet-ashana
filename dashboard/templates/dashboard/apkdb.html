@@ -66,6 +66,31 @@
         tr:hover {
             background-color: #ddd;
         }
+
+        #pagination {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        #pagination button {
+            margin: 0 10px;
+            padding: 5px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #pagination span {
+            font-weight: bold;
+        }
     </style>
     <script>
         function filterTable() {
@@ -98,7 +123,7 @@
             const csvContent = rows.map(row => 
                 Array.from(row.querySelectorAll("th, td"))
                     .map(cell => cell.textContent.trim())
-                    .join(",")
+                    .join(";")
             ).join("\n");
 
             // Добавление BOM для корректного отображения кириллицы в Excel
@@ -113,6 +138,76 @@
         function goBack() {
             window.history.back();
         }
+
+
+        
+      
+        const rowsPerPage = 100; // Количество строк на странице
+        let currentPage = 1; // Текущая страница
+
+        function paginateTable() {
+            const table = document.getElementById("apkTable");
+            const rows = Array.from(table.querySelectorAll("tbody tr"));
+            const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+            rows.forEach((row, index) => {
+                row.style.display = (index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage) ? "" : "none";
+            });
+
+            updatePaginationControls(totalPages);
+        }
+
+        function updatePaginationControls(totalPages) {
+            const paginationContainer = document.getElementById("pagination");
+            paginationContainer.innerHTML = ""; // Очистка старых контролов
+
+            if (totalPages === 0) {
+                paginationContainer.textContent = "Нет данных для отображения";
+                return;
+            }
+
+            // Кнопка "Назад"
+            const prevButton = document.createElement("button");
+            prevButton.textContent = "Назад";
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    paginateTable();
+                }
+            };
+            paginationContainer.appendChild(prevButton);
+
+            // Текущая страница
+            const pageInfo = document.createElement("span");
+            pageInfo.textContent = ` Страница ${currentPage} из ${totalPages} `;
+            paginationContainer.appendChild(pageInfo);
+
+            // Кнопка "Вперед"
+            const nextButton = document.createElement("button");
+            nextButton.textContent = "Вперед";
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    paginateTable();
+                }
+            };
+            paginationContainer.appendChild(nextButton);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const table = document.querySelector("table");
+            if (!table) return;
+
+            // Добавляем контейнер для пагинации
+            const paginationContainer = document.createElement("div");
+            paginationContainer.id = "pagination";
+            table.parentNode.appendChild(paginationContainer);
+
+            paginateTable(); // Инициализация пагинации
+        });
+
     </script>
 </head>
 <body>
