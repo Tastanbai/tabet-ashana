@@ -57,7 +57,7 @@ from django.shortcuts import render
 from django.db import connections
 @login_required
 def apkdb(request):
-    with connections['default'].cursor() as cursor:  
+    with connections['db1'].cursor() as cursor:  
         cursor.execute("""
             SELECT id, card, data, s_number, hik, a1, a2, a3, a4, navigate
             FROM School
@@ -76,7 +76,7 @@ def ashanadb(request):
     error_messages = []
 
     try:
-        with connections['db1'].cursor() as cursor:
+        with connections['default'].cursor() as cursor:
             # Извлекаем данные из таблицы ashana
             cursor.execute("""
                 SELECT 
@@ -150,7 +150,6 @@ def register_page(request):
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
-@login_required
 def user_login(request):
     if request.method == "POST":
         username = request.POST["username"]
@@ -159,8 +158,15 @@ def user_login(request):
 
         if user is not None:
             login(request, user)
-            return redirect("dashboard")  # Перенаправляем на дашборд
+            return redirect("index")  # Перенаправляем на дашборд
         else:
             messages.error(request, "Неверный логин или пароль")
     
     return render(request, "dashboard/login.html")
+
+from django.shortcuts import redirect
+from django.contrib.auth import logout
+
+def logout_view(request):
+    logout(request)  # Выход из системы
+    return redirect('login')  # Перенаправление на страницу логина

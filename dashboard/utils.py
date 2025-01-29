@@ -15,5 +15,3 @@ def register_user_in_api(email, password, name):
 
     response = requests.post(api_url, json=payload, headers=headers, timeout=10)
     return response.json()
-
-register_user_in_api("tastanbay02@gmail.com", "AlemAlem2002@", "Оспан Мизамов")

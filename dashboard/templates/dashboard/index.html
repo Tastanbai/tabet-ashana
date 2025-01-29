@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index</title>
+    <title>Dashboard</title>
     <style>
         /* Reset some default styling */
         body, h1, button {
@@ -20,6 +20,11 @@
             align-items: center;
             height: 100vh;
             text-align: center;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
         }
 
         h1 {
@@ -28,10 +33,32 @@
             color: #4CAF50;
         }
 
+        /* Logout button in the top right corner */
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .logout-container a {
+            background-color: #ff4d4d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-container a:hover {
+            background-color: #e60000;
+        }
+
         .button-container {
             display: flex;
             gap: 20px;
             justify-content: center;
+            margin-top: 20px;
         }
 
         button {
@@ -41,7 +68,6 @@
             padding: 15px 32px;
             text-align: center;
             text-decoration: none;
-            display: inline-block;
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
@@ -58,9 +84,14 @@
     </style>
 </head>
 <body>
-    <div>
+    <!-- Logout button positioned in the top-right corner -->
+    <div class="logout-container">
+        <a href="{% url 'logout' %}">Выйти</a>
+    </div>
+
+    <div class="container">
         <h1>Welcome to the Dashboard</h1>
-        
+
         <div class="button-container">
             <button onclick="window.location.href='{% url 'kitapdb' %}'">Kitap DB</button>
             <button onclick="window.location.href='{% url 'apkdb' %}'">APK DB</button>
